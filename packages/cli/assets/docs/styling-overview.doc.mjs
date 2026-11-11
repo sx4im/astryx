@@ -148,7 +148,7 @@ export const docs = {
           headers: ['Bundler', 'Plugin'],
           rows: [
             ['Webpack', '@stylexjs/webpack-plugin'],
-            ['Vite / Rollup', '@stylexjs/rollup-plugin'],
+            ['Vite / Rollup', '@stylexjs/rollup-plugin (or @stylexjs/unplugin for Vite)'],
             [
               'Babel (any)',
               '@stylexjs/babel-plugin + @stylexjs/postcss-plugin',

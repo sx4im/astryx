@@ -2,7 +2,9 @@
 
 Reference application for consuming **@astryxdesign/core** as a source distribution in a Vite + React project.
 
-Astryx ships as raw TypeScript + StyleX source. Consumers compile it at the application level; there's no pre-built CSS or JS bundle. This example shows the complete setup using `@stylexjs/unplugin`, which handles both StyleX compilation and CSS extraction in a single Vite plugin.
+This example demonstrates the build-from-source path: it points Vite at the package source and compiles it in the app. Most apps should use the default path instead: import the pre-built stylesheets (`@astryxdesign/core/reset.css`, `@astryxdesign/core/astryx.css`, and your theme CSS) with no aliases, excludes, or StyleX plugin for Astryx itself; see `astryx docs styling-overview`. Use this example's setup only when you consume Astryx as a source distribution.
+
+The shipped `vite.config.ts` uses `astryxStylex()` from `@astryxdesign/build/vite`, which applies the setup shown below: `@stylexjs/unplugin` for StyleX compilation and CSS extraction, plus the resolve aliases, `optimizeDeps` excludes, and lightningcss targets that keep `light-dark()` tokens intact.
 
 ## How it differs from Next.js
 
@@ -37,7 +39,7 @@ Add a `browserslist` to `package.json` so that both Vite's CSS pipeline and the 
 
 ### 3. Vite config
 
-`vite.config.ts`: configure the StyleX unplugin, React plugin, and resolve aliases:
+`vite.config.ts`: the setup `astryxStylex()` applies, shown expanded (the shipped file is the one-line `plugins: [...astryxStylex(), react()]`):
 
 ```ts
 import path from 'path';
@@ -103,9 +105,10 @@ export default defineConfig({
       ),
     },
   },
-  // Prevent Vite from pre-bundling Astryx with esbuild. Astryx ships as source
-  // that must be compiled by the StyleX plugin — pre-bundling strips the
-  // stylex.create/defineVars calls and causes a runtime error.
+  // Prevent Vite from pre-bundling Astryx with esbuild. This example
+  // consumes Astryx as source, so it must be compiled by the StyleX
+  // plugin — pre-bundling strips the stylex.create/defineVars calls and
+  // causes a runtime error.
   optimizeDeps: {
     exclude: ['@astryxdesign/core', '@astryxdesign/theme-neutral'],
   },
