@@ -1,8 +1,8 @@
 # Astryx Example: Vite
 
-Reference application for consuming **@astryxdesign/core** as a source distribution in a Vite + React project.
+Reference application for consuming **@astryxdesign/core** from source in a Vite + React project. This example demonstrates the build-from-source path: it compiles Astryx's published TypeScript + StyleX source at the application level using `@stylexjs/unplugin`, which handles both StyleX compilation and CSS extraction in a single Vite plugin.
 
-Astryx ships as raw TypeScript + StyleX source. Consumers compile it at the application level; there's no pre-built CSS or JS bundle. This example shows the complete setup using `@stylexjs/unplugin`, which handles both StyleX compilation and CSS extraction in a single Vite plugin.
+Most consumers should use the pre-built path instead: `@astryxdesign/core` ships pre-built CSS (`astryx.css`) and JavaScript (`dist/index.js`), so you import the stylesheets and typed React components with no build plugin (see the root README and `astryx docs styling-overview`). Use this example's source path only when you need to compile Astryx source at the application level, for example to swizzle (eject) a component and edit its StyleX source.
 
 ## How it differs from Next.js
 
