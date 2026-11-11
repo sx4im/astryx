@@ -1783,10 +1783,16 @@ export function useSheetGestures({
         pointerMoveRef.current(asPointer(t, scroller, event));
         return;
       }
-      if ((armed.top && delta < 0) || (armed.bottom && delta > 0)) {
-        // Scrolling away from the armed edge; hand back to native scroll. The
-        // touch stays tracked: this is the swipe that may reach the far edge.
+      // A move away from an armed edge is a scroll only when the content has
+      // room to scroll that way. The native scroll then takes that edge. The
+      // touch stays tracked, because this swipe can reach the far edge.
+      // Content that fits has nothing to scroll, so both edges stay armed. A
+      // pull that starts under the slop, or drifts the other way first, still
+      // starts the drag.
+      if (armed.top && delta < 0 && !chainAtBottom(armed.scrollers)) {
         armed.top = false;
+      }
+      if (armed.bottom && delta > 0 && !chainAtTop(armed.scrollers)) {
         armed.bottom = false;
       }
       // Reaching the end of the content mid-gesture. Arming at `touchstart`

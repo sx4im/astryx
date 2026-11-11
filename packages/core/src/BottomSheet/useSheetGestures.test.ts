@@ -1629,6 +1629,160 @@ describe('useSheetGestures', () => {
       }
     });
 
+    describe('content that fits', () => {
+      // Nothing scrolls, so a touch arms both edges at touch-down.
+      function fittingSheet() {
+        const {hook} = setup({
+          snapHeights: () => [200],
+          offscreenBlockEndInset: TOUCH_RESERVE,
+        });
+        const el = makeScroller({
+          scrollTop: 0,
+          clientHeight: 200,
+          scrollHeight: 200,
+        });
+        act(() => hook.result.current.sheetRef(el));
+        act(() => hook.result.current.bodyProps.ref(el));
+        return {hook, el};
+      }
+
+      it.each([
+        {first: 1, isFirstCancelled: false},
+        {first: 4, isFirstCancelled: false},
+        {first: 5, isFirstCancelled: true},
+        {first: 8, isFirstCancelled: true},
+      ])(
+        'promotes a pull-down whose first move is $first px, under the drag slop',
+        ({first, isFirstCancelled}) => {
+          const {hook, el} = fittingSheet();
+          let start!: Event;
+          let pull!: Event;
+          act(() => {
+            touch(el, 'touchstart', 100);
+            start = touch(el, 'touchmove', 100 + first);
+          });
+          // A tap's wobble keeps its click. Past the wobble, the sheet cancels
+          // the pan.
+          expect(start.defaultPrevented).toBe(isFirstCancelled);
+          expect(hook.result.current.isDragging).toBe(false);
+          act(() => {
+            pull = touch(el, 'touchmove', 140);
+          });
+          expect(pull.defaultPrevented).toBe(true);
+          expect(hook.result.current.isDragging).toBe(true);
+          // The drag starts from the touch-down point, so the sheet loses no
+          // travel.
+          expect(liveOffset(hook)).toBe(40);
+        },
+      );
+
+      it('promotes a pull-down that creeps a pixel at a time through the slop', () => {
+        const {hook, el} = fittingSheet();
+        const moves: Event[] = [];
+        act(() => {
+          touch(el, 'touchstart', 100);
+          for (let y = 101; y <= 108; y += 1) {
+            moves.push(touch(el, 'touchmove', y));
+          }
+        });
+        expect(hook.result.current.isDragging).toBe(false);
+        expect(moves.map(move => move.defaultPrevented)).toEqual([
+          false,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+        ]);
+        act(() => {
+          touch(el, 'touchmove', 109);
+        });
+        expect(hook.result.current.isDragging).toBe(true);
+        expect(liveOffset(hook)).toBe(9);
+      });
+
+      it('promotes a pull-down after the finger drifts up as it lands', () => {
+        const {hook, el} = fittingSheet();
+        let drift!: Event;
+        let pull!: Event;
+        act(() => {
+          touch(el, 'touchstart', 100);
+          drift = touch(el, 'touchmove', 99);
+        });
+        expect(drift.defaultPrevented).toBe(false);
+        expect(hook.result.current.isDragging).toBe(false);
+        act(() => {
+          pull = touch(el, 'touchmove', 140);
+        });
+        expect(pull.defaultPrevented).toBe(true);
+        expect(hook.result.current.isDragging).toBe(true);
+        expect(liveOffset(hook)).toBe(40);
+      });
+
+      it('claims a pull-up after the finger drifts down as it lands', () => {
+        const {hook, el} = fittingSheet();
+        let pull!: Event;
+        act(() => {
+          touch(el, 'touchstart', 300);
+          touch(el, 'touchmove', 303);
+          pull = touch(el, 'touchmove', 250);
+        });
+        // The sheet takes the pull from the touch-down, and cancels its pan.
+        expect(pull.defaultPrevented).toBe(true);
+        expect(hook.result.current.isDragging).toBe(true);
+        expect(-liveOffset(hook)).toBeCloseTo(
+          rubberBand(50, SHEET_HEIGHT - TOUCH_RESERVE),
+          6,
+        );
+      });
+    });
+
+    it('gives a list at its top to its scroll on an upward first move, and takes no later pull-down', () => {
+      const {hook} = setup({snapHeights: () => [200]});
+      const el = makeScroller({
+        scrollTop: 0,
+        clientHeight: 200,
+        scrollHeight: 800,
+      });
+      act(() => hook.result.current.sheetRef(el));
+      act(() => hook.result.current.bodyProps.ref(el));
+      let back!: Event;
+      act(() => {
+        touch(el, 'touchstart', 100);
+        touch(el, 'touchmove', 97);
+        back = touch(el, 'touchmove', 150);
+      });
+      // The scroll owns this touch, so the drag does not change hands.
+      expect(back.defaultPrevented).toBe(false);
+      expect(hook.result.current.isDragging).toBe(false);
+    });
+
+    it('gives a list at its end to its scroll on a downward first move, and claims no later pull-up', () => {
+      const {hook} = setup({snapHeights: () => [200]});
+      const el = makeScroller({
+        scrollTop: 600,
+        clientHeight: 200,
+        scrollHeight: 800,
+      });
+      act(() => hook.result.current.sheetRef(el));
+      act(() => hook.result.current.bodyProps.ref(el));
+      // Settle at the lower detent, where the sheet claims a pull up at the
+      // end.
+      down(hook, 0, 0, el);
+      move(hook, 180, 700, el);
+      up(hook, 180, 1100, el);
+      expect(hook.result.current.settledOffset).toBe(200);
+      let back!: Event;
+      act(() => {
+        touch(el, 'touchstart', 300);
+        touch(el, 'touchmove', 303);
+        back = touch(el, 'touchmove', 250);
+      });
+      expect(back.defaultPrevented).toBe(false);
+    });
+
     it("keeps a stylus pulling up on the body at the tallest detent on a pen's stretch, capped at 48 px", () => {
       const {hook} = setup({
         snapHeights: () => [200],
