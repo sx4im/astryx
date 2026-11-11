@@ -11,6 +11,7 @@
  *   on a phone: a tap, a long press and a scroll that starts on a trigger.
  */
 
+import {useState} from 'react';
 import {Button} from '@astryxdesign/core/Button';
 import {Icon} from '@astryxdesign/core/Icon';
 import {IconButton} from '@astryxdesign/core/IconButton';
@@ -21,6 +22,7 @@ import {Heading, Text} from '@astryxdesign/core/Text';
 const PAGE_ROWS = Array.from({length: 40}, (_, index) => `Row ${index + 1}`);
 
 export default function TooltipTriggersPage() {
+  const [isDocsDisabled, setIsDocsDisabled] = useState(false);
   return (
     <VStack gap={4} padding={4}>
       <VStack gap={1}>
@@ -59,6 +61,19 @@ export default function TooltipTriggersPage() {
           tooltip="Close"
         />
         <Button label="Save" variant="primary" tooltip="Save your changes" />
+      </HStack>
+      <HStack gap={2}>
+        <Button
+          label="Docs"
+          href="#docs"
+          tooltip="Read the docs"
+          isDisabled={isDocsDisabled}
+        />
+        <Button
+          label={isDocsDisabled ? 'Enable Docs' : 'Disable Docs'}
+          variant="secondary"
+          onClick={() => setIsDocsDisabled(value => !value)}
+        />
       </HStack>
       <Text>
         Read the{' '}
